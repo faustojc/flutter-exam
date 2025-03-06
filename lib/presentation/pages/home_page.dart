@@ -122,6 +122,7 @@ class _HomePageState extends State<HomePage> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         PersonList(state.persons),
 
@@ -134,8 +135,18 @@ class _HomePageState extends State<HomePage> {
                                     ? null
                                     : ElevatedButton(
                                       onPressed:
-                                          () => BlocProvider.of<PersonCubit>(context).onLoadMore(),
-                                      child: const Text('Load more'),
+                                          !state.isLoadingMore
+                                              ? () =>
+                                                  BlocProvider.of<PersonCubit>(context).onLoadMore()
+                                              : null,
+                                      child:
+                                          !state.isLoadingMore
+                                              ? const Text('Load more')
+                                              : const SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(),
+                                              ),
                                     ),
                           ),
 

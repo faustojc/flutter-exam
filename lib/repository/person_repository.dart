@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
 class PersonRepository {
-  static const String baseUrl = 'https://fakerapi.it/api/v2/persons';
+  final String baseUrl = 'https://fakerapi.it/api/v2/persons';
   final _logger = Logger(
     printer: PrettyPrinter(methodCount: 4, errorMethodCount: 8, lineLength: 120, colors: true),
   );

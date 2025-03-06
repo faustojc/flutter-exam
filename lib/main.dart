@@ -1,4 +1,5 @@
 import 'package:fast_cached_network_image/fast_cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_exam/presentation/blocs/person_bloc/person_cubit.dart';
@@ -10,7 +11,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   FastCachedImageConfig.init(
-    subDir: (await getApplicationDocumentsDirectory()).path,
+    subDir: (kIsWeb) ? null : (await getApplicationDocumentsDirectory()).path,
     clearCacheAfter: const Duration(days: 2),
   );
 

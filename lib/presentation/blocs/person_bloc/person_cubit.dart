@@ -1,4 +1,4 @@
-import 'package:fast_equatable/fast_equatable.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_exam/model/person.dart';
 import 'package:flutter_exam/repository/person_repository.dart';

@@ -1,6 +1,6 @@
 part of 'person_cubit.dart';
 
-final class PersonState with FastEquatable {
+final class PersonState extends Equatable {
   final List<Person> persons;
   final int fetchAttempts;
   final bool isLoading;
@@ -9,7 +9,7 @@ final class PersonState with FastEquatable {
   final bool hasReachedMax;
   final String? error;
 
-  PersonState({
+  const PersonState({
     this.persons = const [],
     this.isLoading = false,
     this.isLoadingMore = false,
@@ -40,7 +40,7 @@ final class PersonState with FastEquatable {
   }
 
   @override
-  List<Object?> get hashParameters => [
+  List<Object?> get props => [
     persons,
     fetchAttempts,
     isLoading,
