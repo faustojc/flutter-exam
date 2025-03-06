@@ -7,7 +7,7 @@ class PersonRepository {
   static const String baseUrl = 'https://fakerapi.it/api/v2/persons';
 
   Future<List<Person>> fetchPersons({int quantity = 10}) async {
-    final url = Uri.parse("$baseUrl?_quantity=$quantity");
+    final url = Uri.parse("$baseUrl?_quantity=$quantity&_seed=12456");
 
     try {
       final response = await http.get(url);

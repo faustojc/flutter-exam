@@ -26,10 +26,23 @@ class PersonCubit extends Cubit<PersonState> {
     emit(state.copyWith(isLoadingMore: true));
 
     try {
+      if (state.hasReachedMax) {
+        emit(state.copyWith(isLoadingMore: false));
+        return;
+      }
+
       final quantity = state.persons.length;
       final persons = await _personRepository.fetchPersons(quantity: quantity + 20);
 
-      emit(state.copyWith(persons: persons, isLoadingMore: false));
+      emit(
+        state.copyWith(
+          persons: persons,
+          isLoadingMore: false,
+          hasReachedMax: state.fetchAttempts == 4,
+          fetchAttempts:
+              (quantity == persons.length) ? state.fetchAttempts + 1 : state.fetchAttempts,
+        ),
+      );
     } catch (e) {
       emit(state.copyWith(error: e.toString(), isLoadingMore: false));
     }
