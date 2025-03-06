@@ -36,10 +36,7 @@ class PersonCubit extends Cubit<PersonState> {
       final existingPersons = state.persons;
 
       if (existingPersons.isNotEmpty) {
-        existingPersons.insertAll(
-          existingPersons.length - 1,
-          persons.sublist(existingPersons.length),
-        );
+        existingPersons.insertAll(existingPersons.length, persons.sublist(existingPersons.length));
       }
 
       emit(

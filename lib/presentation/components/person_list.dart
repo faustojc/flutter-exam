@@ -1,6 +1,7 @@
 import 'package:fast_cached_network_image/fast_cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_exam/model/person.dart';
+import 'package:flutter_exam/presentation/pages/person_details_page.dart';
 
 class PersonList extends StatelessWidget {
   final List<Person> persons;
@@ -17,6 +18,11 @@ class PersonList extends StatelessWidget {
       final person = persons[index];
 
       return ListTile(
+        onTap:
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PersonDetailsPage(person)),
+            ),
         leading: CircleAvatar(
           child: FastCachedImage(
             url: person.image,
