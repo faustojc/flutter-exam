@@ -1,8 +1,8 @@
-import 'package:fast_cached_network_image/fast_cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_exam/presentation/blocs/person_bloc/person_cubit.dart';
+import 'package:flutter_exam/presentation/components/person_list.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,6 +16,7 @@ class _HomePageState extends State<HomePage> {
 
   bool get _isBottom {
     if (!_scrollController.hasClients) return false;
+
     final pixels = _scrollController.position.pixels;
     final maxScrollExtent = _scrollController.position.maxScrollExtent;
 
@@ -41,14 +42,16 @@ class _HomePageState extends State<HomePage> {
     Future.delayed(const Duration(seconds: 4), () => scaffoldMessenger.hideCurrentMaterialBanner());
   }
 
+  void _onScroll() {
+    if (_isBottom) BlocProvider.of<PersonCubit>(context).onLoadMore();
+  }
+
   @override
   void initState() {
     super.initState();
 
-    if (!kIsWeb && context.mounted) {
-      _scrollController.addListener(() {
-        if (_isBottom) BlocProvider.of<PersonCubit>(context).onLoadMore();
-      });
+    if (!kIsWeb) {
+      _scrollController.addListener(_onScroll);
     }
   }
 
@@ -68,74 +71,89 @@ class _HomePageState extends State<HomePage> {
     },
     child: Scaffold(
       appBar: AppBar(title: Text('Flutter Exam')),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: BlocBuilder<PersonCubit, PersonState>(
-          builder: (_, state) {
-            if (state.isLoading) {
-              return Center(child: CircularProgressIndicator());
-            }
-
-            return Column(
-              children: [
-                Expanded(
-                  child: ListView.separated(
-                    controller: _scrollController,
-                    physics: AlwaysScrollableScrollPhysics(),
-                    itemCount: state.persons.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final person = state.persons[index];
-
-                      return ListTile(
-                        leading: CircleAvatar(
-                          child: FastCachedImage(
-                            url: person.image,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) {
-                              return const Icon(Icons.person);
-                            },
-                            loadingBuilder: (context, progress) {
-                              return CircularProgressIndicator(
-                                color: Theme.of(context).colorScheme.primary,
-                                value: progress.progressPercentage.value,
-                              );
-                            },
-                          ),
-                        ),
-                        title: Text(person.fullName),
-                        subtitle: Text(person.email, style: TextStyle(fontSize: 12)),
-                        tileColor: Theme.of(context).colorScheme.secondaryFixedDim,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      floatingActionButton:
+          (!kIsWeb)
+              ? null
+              : FloatingActionButton(
+                onPressed:
+                    () => BlocProvider.of<PersonCubit>(context).onInitialize(isRefreshing: true),
+                child: BlocBuilder<PersonCubit, PersonState>(
+                  buildWhen: (prev, curr) => prev.isRefreshing != curr.isRefreshing,
+                  builder: (_, state) {
+                    if (state.isRefreshing) {
+                      return const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(),
                       );
-                    },
-                  ),
+                    } else {
+                      return const Icon(Icons.refresh);
+                    }
+                  },
                 ),
+              ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          Future<void> personState = BlocProvider.of<PersonCubit>(context)
+              .stream //
+              .firstWhere((state) => !state.isRefreshing && !state.isLoading);
 
-                // For web with button
-                if (kIsWeb)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child:
-                        state.hasReachedMax
-                            ? null
-                            : ElevatedButton(
-                              onPressed: () => BlocProvider.of<PersonCubit>(context).onLoadMore(),
-                              child: const Text('Load more'),
-                            ),
+          BlocProvider.of<PersonCubit>(context).onInitialize(isRefreshing: true);
+
+          return personState;
+        },
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          slivers: [
+            BlocBuilder<PersonCubit, PersonState>(
+              buildWhen: (prev, curr) => prev != curr,
+              builder: (_, state) {
+                if (state.isLoading && !state.isRefreshing) {
+                  return SliverFillRemaining(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  );
+                }
+
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        PersonList(state.persons),
+
+                        // For web with button
+                        if (kIsWeb)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 15),
+                            child:
+                                state.hasReachedMax
+                                    ? null
+                                    : ElevatedButton(
+                                      onPressed:
+                                          () => BlocProvider.of<PersonCubit>(context).onLoadMore(),
+                                      child: const Text('Load more'),
+                                    ),
+                          ),
+
+                        // For mobile loading
+                        if (!kIsWeb && state.isLoadingMore && state.persons.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 15),
+                            child: const Center(child: CircularProgressIndicator()),
+                          ),
+
+                        if (state.hasReachedMax) const Center(child: Text('No more data')),
+                      ],
+                    ),
                   ),
-
-                // For mobile loading
-                if (!kIsWeb && state.isLoadingMore && state.persons.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: const Center(child: CircularProgressIndicator()),
-                  ),
-
-                if (state.hasReachedMax) const Center(child: Text('No more data')),
-              ],
-            );
-          },
+                );
+              },
+            ),
+          ],
         ),
       ),
     ),

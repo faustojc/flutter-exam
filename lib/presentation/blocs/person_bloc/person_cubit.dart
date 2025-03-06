@@ -10,15 +10,15 @@ class PersonCubit extends Cubit<PersonState> {
 
   PersonCubit(this._personRepository) : super(PersonState());
 
-  Future<void> onInitialize() async {
-    emit(state.copyWith(isLoading: true));
+  Future<void> onInitialize({bool isRefreshing = false}) async {
+    emit(state.copyWith(isLoading: true, isRefreshing: isRefreshing));
 
     try {
       final persons = await _personRepository.fetchPersons();
 
-      emit(state.copyWith(persons: persons, isLoading: false));
+      emit(state.copyWith(persons: persons, isLoading: false, isRefreshing: false));
     } catch (e) {
-      emit(state.copyWith(error: e.toString(), isLoading: false));
+      emit(state.copyWith(error: e.toString(), isLoading: false, isRefreshing: false));
     }
   }
 
@@ -33,10 +33,18 @@ class PersonCubit extends Cubit<PersonState> {
 
       final quantity = state.persons.length;
       final persons = await _personRepository.fetchPersons(quantity: quantity + 20);
+      final existingPersons = state.persons;
+
+      if (existingPersons.isNotEmpty) {
+        existingPersons.insertAll(
+          existingPersons.length - 1,
+          persons.sublist(existingPersons.length),
+        );
+      }
 
       emit(
         state.copyWith(
-          persons: persons,
+          persons: existingPersons,
           isLoadingMore: false,
           hasReachedMax: state.fetchAttempts == 4,
           fetchAttempts:
